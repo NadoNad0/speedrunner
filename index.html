@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speedrunner - Multi-Track Timer</title>
+    <meta name="description" content="A premium multi-track time dashboard.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <main class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <span class="icon">⚡</span> Speedrunner
+            </div>
+            <div class="header-controls">
+                <button id="theme-toggle-btn" class="btn-icon-only-sm" title="Toggle Theme">
+                    🌙
+                </button>
+                <button id="add-timer-btn" class="btn btn-primary btn-sm">
+                    + New Timer
+                </button>
+            </div>
+        </header>
+
+        <section class="timer-table-container">
+            <div class="timer-table-header">
+                <div class="col col-tag">Tag</div>
+                <div class="col col-name">Name</div>
+                <div class="col col-time">Time</div>
+                <div class="col col-control">Control</div>
+                <div class="col col-settings">Settings</div>
+                <div class="col col-reset">Reset</div>
+                <div class="col col-delete"></div>
+            </div>
+
+            <div id="timer-list" class="timer-list">
+                <!-- Timers will be injected here -->
+            </div>
+
+            <div class="table-footer-row">
+                <button id="add-timer-bottom-btn" class="btn-text-only">
+                    + Add New Timer
+                </button>
+            </div>
+
+            <div id="empty-state" class="empty-state hidden">
+                <div class="empty-content">
+                    <div class="empty-icon">⏱️</div>
+                    <h3>Ready to start?</h3>
+                    <p>Create your first timer to begin tracking.</p>
+                    <button id="create-first-btn" class="btn btn-primary btn-lg">Create First Timer</button>
+                </div>
+            </div>
+        </section>
+
+        <footer class="app-footer">
+            <div class="total-time-container">
+                <span class="total-label">Total Time Spent</span>
+                <span id="total-time-display" class="total-time">00:00:00</span>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Timer Settings</h3>
+                <button id="close-settings-btn" class="btn-icon-only-sm">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Timer Type</label>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-type="stopwatch">Stopwatch</button>
+                        <button class="toggle-btn" data-type="countdown">Countdown</button>
+                    </div>
+                </div>
+                <div id="countdown-config" class="form-group hidden">
+                    <label>Duration (minutes)</label>
+                    <input type="number" id="countdown-input" min="1" value="25" class="input-field">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="show-in-title-check">
+                    <label for="show-in-title-check">Show timer in browser title</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-settings-btn" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Alert Modal -->
+    <div id="alert-modal" class="modal-overlay hidden">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3 id="alert-title">Alert</h3>
+                <button id="close-alert-btn" class="btn-icon-only-sm">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="alert-message" class="modal-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-alert-btn" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Confirm Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3 id="confirm-title">Confirm</h3>
+                <button id="close-confirm-btn" class="btn-icon-only-sm">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message" class="modal-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-confirm-btn" class="btn btn-secondary">Cancel</button>
+                <button id="ok-confirm-btn" class="btn btn-primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
