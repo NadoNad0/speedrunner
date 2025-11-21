@@ -1030,6 +1030,9 @@ body {
             "content"
             "share";
         gap: var(--spacing-sm);
+        height: auto;
+        /* Ensure it grows */
+        padding-bottom: var(--spacing-md);
     }
 
     .dashboard-header {
@@ -1041,6 +1044,8 @@ body {
         width: 100%;
         margin: 0;
         justify-content: center;
+        /* Ensure it doesn't overflow */
+        box-sizing: border-box;
     }
 
     .total-time-container {

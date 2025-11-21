@@ -338,17 +338,8 @@ class SpeedrunnerApp {
             });
         }
 
-        // Delete Sound (Delegated)
-        this.timerListEl.addEventListener('click', (e) => {
-            if (e.target.closest('.col-delete button')) {
-                // Sound played in delete logic or here?
-                // The delete logic has a confirm modal. Sound should play when CONFIRMED? 
-                // Or when clicking the trash icon?
-                // User said "Sounds on the trash icon".
-                // I will play it when clicking the trash icon.
-                this.sound.playDelete();
-            }
-        });
+        // Delete Sound (Delegated) - REMOVED (Now in confirmDelete)
+
 
         // Dashboard
         this.dashboardFooter.addEventListener('click', (e) => {
@@ -547,6 +538,28 @@ class SpeedrunnerApp {
         this.updateRowUI(timer);
     }
 
+    promptDelete(id) {
+        this.timerToDeleteId = id;
+        this.showConfirm(
+            "Are you sure you want to delete this timer? This action cannot be undone.",
+            this.confirmDelete,
+            "Delete Timer?"
+        );
+    }
+
+    confirmDelete() {
+        if (this.timerToDeleteId === null) return;
+
+        this.timers = this.timers.filter(t => t.id !== this.timerToDeleteId);
+        this.saveData();
+        this.renderAllTimers();
+        this.checkEmptyState();
+        this.updateAddButtonState();
+        this.updateShareButtonState();
+        this.timerToDeleteId = null;
+        this.sound.playDelete(); // Play sound on confirmation
+    }
+
     resetTimer(id) {
         const timer = this.timers.find(t => t.id === id);
         if (!timer) return;
@@ -641,6 +654,37 @@ class SpeedrunnerApp {
         }
         if (Notification.permission !== "granted" && Notification.permission !== "denied") {
             Notification.requestPermission();
+        }
+    }
+
+    toggleNotifications() {
+        if (this.notifyCheck.checked) {
+            if (!window.isSecureContext) {
+                this.showAlert("Notifications require HTTPS or Localhost.", "Secure Context Required");
+                this.notifyCheck.checked = false;
+                this.notifyConfig.classList.add('hidden');
+                return;
+            }
+
+            if (Notification.permission !== 'granted') {
+                Notification.requestPermission().then(permission => {
+                    if (permission !== 'granted') {
+                        this.notifyCheck.checked = false;
+                        this.notifyConfig.classList.add('hidden');
+                        this.showAlert('Please enable notifications in your browser settings.', 'Notification Blocked');
+                    } else {
+                        new Notification("Speedrunner", {
+                            body: "Notifications enabled successfully!",
+                            icon: "favicon.svg"
+                        });
+                    }
+                });
+            } else {
+                new Notification("Speedrunner", {
+                    body: "Notifications enabled successfully!",
+                    icon: "favicon.svg"
+                });
+            }
         }
     }
 
@@ -749,55 +793,85 @@ class SpeedrunnerApp {
         }
     }
 
-    openShareModal(timersToView = null, isReadOnly = false) {
-        const timers = timersToView || this.timers;
-        const { totalMs, gradientParts, legendHtml } = this.calculateStats(timers);
+    openShareModal(viewOnly = false) {
+        const modal = document.getElementById('share-modal');
+        const overlay = document.getElementById('share-overlay');
 
-        this.postcardDate.textContent = new Date().toLocaleDateString();
+        // Calculate stats for chart
+        const { totalMs, gradientParts } = this.calculateStats(this.timers);
+
         this.postcardTotal.textContent = this.formatTime(totalMs);
+        this.postcardDate.textContent = new Date().toLocaleDateString();
 
+        // Set Chart Gradient
         if (totalMs === 0) {
             this.postcardChart.style.background = `conic-gradient(var(--color-border) 0% 100%)`;
-            this.postcardList.innerHTML = '<div class="legend-label">No data yet</div>';
         } else {
             this.postcardChart.style.background = `conic-gradient(${gradientParts.join(', ')})`;
-            this.postcardList.innerHTML = legendHtml;
         }
 
-        if (isReadOnly) {
-            this.shareLinkInput.value = window.location.href;
-            this.copyLinkBtn.textContent = "Copy Link";
-            // Hide CTA in read-only mode? Or change it?
-            // Let's keep it generic or hide it.
-            document.querySelector('.share-cta').textContent = "Shared Results";
+        // Populate list
+        const listEl = this.postcardList;
+        listEl.innerHTML = '';
+        this.timers.slice(0, 5).forEach(t => { // Show top 5
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            // Calculate ms for this timer to display correct time
+            const ms = t.type === 'stopwatch' ? t.duration : (t.initialDuration - t.remaining);
+            item.innerHTML = `
+                <span class="legend-label">${t.name}</span>
+                <span class="legend-val">${this.formatTime(ms)}</span>
+            `;
+            listEl.appendChild(item);
+        });
+
+        if (viewOnly) {
+            document.querySelector('.share-controls').classList.add('hidden');
+            document.querySelector('.share-cta').textContent = "Shared Speedrunner Results";
+            this.shareLinkInput.value = window.location.href; // Display the current shared URL
         } else {
-            this.shareLinkInput.value = this.generateShareLink();
+            document.querySelector('.share-controls').classList.remove('hidden');
+            this.shareLinkInput.value = "Generating link...";
+            this.generateShareLink().then(url => {
+                this.shareLinkInput.value = url;
+            });
+
             document.querySelector('.share-cta').textContent = "Great Job! Share your results with friends.";
             // No sound for share
             this.confetti.burst();
         }
 
-        this.shareModal.classList.remove('hidden');
+        this.shareModal.classList.remove('hidden'); // Assuming shareModal is the main modal element
     }
 
     closeShareModal() {
         this.shareModal.classList.add('hidden');
     }
 
-    generateShareLink() {
-        // Minimal data to save space
-        const minData = this.timers.map(t => ({
-            tag: t.tag,
-            name: t.name,
-            type: t.type,
-            duration: t.duration,
-            remaining: t.remaining,
-            initialDuration: t.initialDuration
-        }));
-        const encoded = btoa(encodeURIComponent(JSON.stringify(minData)));
-        const url = new URL(window.location.href);
-        url.searchParams.set('share', encoded);
-        return url.toString();
+    async shortenUrl(longUrl) {
+        try {
+            const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+            if (response.ok) {
+                return await response.text();
+            }
+        } catch (e) {
+            console.warn("URL Shortener failed, using long URL", e);
+        }
+        return longUrl;
+    }
+
+    async generateShareLink() {
+        // Compact format: name|time|tagIndex;...
+        // Base64 encoded
+        const data = this.timers.map(t => {
+            const tagObj = this.TAG_OPTIONS.find(opt => opt.val === t.tag) || this.TAG_OPTIONS[0];
+            const tagIndex = this.TAG_OPTIONS.indexOf(tagObj); // Get index of the tag
+            const time = t.type === 'stopwatch' ? t.duration : (t.initialDuration - t.remaining);
+            return `${t.name}|${time}|${tagIndex === -1 ? 0 : tagIndex}`;
+        }).join(';');
+
+        const longUrl = window.location.origin + window.location.pathname + '?share=' + btoa(encodeURIComponent(data));
+        return await this.shortenUrl(longUrl);
     }
 
     copyShareLink() {
