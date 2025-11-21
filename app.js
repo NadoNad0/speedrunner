@@ -831,10 +831,7 @@ class SpeedrunnerApp {
             this.shareLinkInput.value = window.location.href; // Display the current shared URL
         } else {
             document.querySelector('.share-controls').classList.remove('hidden');
-            this.shareLinkInput.value = "Generating link...";
-            this.generateShareLink().then(url => {
-                this.shareLinkInput.value = url;
-            });
+            this.shareLinkInput.value = this.generateShareLink();
 
             document.querySelector('.share-cta').textContent = "Great Job! Share your results with friends.";
             // No sound for share
@@ -848,19 +845,7 @@ class SpeedrunnerApp {
         this.shareModal.classList.add('hidden');
     }
 
-    async shortenUrl(longUrl) {
-        try {
-            const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-            if (response.ok) {
-                return await response.text();
-            }
-        } catch (e) {
-            console.warn("URL Shortener failed, using long URL", e);
-        }
-        return longUrl;
-    }
-
-    async generateShareLink() {
+    generateShareLink() {
         // Compact format: name|time|tagIndex;...
         // Base64 encoded
         const data = this.timers.map(t => {
@@ -870,8 +855,7 @@ class SpeedrunnerApp {
             return `${t.name}|${time}|${tagIndex === -1 ? 0 : tagIndex}`;
         }).join(';');
 
-        const longUrl = window.location.origin + window.location.pathname + '?share=' + btoa(encodeURIComponent(data));
-        return await this.shortenUrl(longUrl);
+        return window.location.origin + window.location.pathname + '?share=' + btoa(encodeURIComponent(data));
     }
 
     copyShareLink() {

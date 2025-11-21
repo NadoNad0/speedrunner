@@ -753,6 +753,22 @@ body {
     cursor: pointer;
 }
 
+.checkbox-group input:checked+label::after {
+    transform: scale(1);
+}
+
+/* Disabled State */
+.disabled-group {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.input-group {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
 .toggle-group {
     display: flex;
     background: var(--color-input-bg);
