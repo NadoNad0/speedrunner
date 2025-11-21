@@ -63,13 +63,63 @@
             </div>
         </section>
 
-        <footer class="app-footer">
-            <div class="total-time-container">
-                <span class="total-label">Total Time Spent</span>
+        <footer id="dashboard-footer" class="app-footer dashboard-footer">
+            <div class="dashboard-header">
+                <span class="total-label">Dashboard</span>
                 <span id="total-time-display" class="total-time">00:00:00</span>
+                <div class="dashboard-toggle-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
             </div>
+            <div id="dashboard-content" class="dashboard-content hidden">
+                <div class="chart-container">
+                    <div id="time-chart" class="pie-chart"></div>
+                </div>
+                <div id="chart-legend" class="chart-legend">
+                    <!-- Legend items injected here -->
+                </div>
+            </div>
+            <button id="share-btn" class="btn btn-primary btn-sm share-btn" title="Share Results">Share Results</button>
         </footer>
     </main>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="modal-overlay hidden">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>Share Results</h3>
+                <button id="close-share-btn" class="btn-icon-only-sm">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="share-cta">Great Job! Share your results with friends.</p>
+                <div id="postcard" class="postcard">
+                    <div class="postcard-header">
+                        <div class="postcard-logo">⚡ Speedrunner</div>
+                        <div class="postcard-date" id="postcard-date"></div>
+                    </div>
+                    <div class="postcard-stats">
+                        <div class="postcard-total">
+                            <span class="label">Total Time</span>
+                            <span class="value" id="postcard-total">00:00:00</span>
+                        </div>
+                        <div class="postcard-chart-container">
+                            <div id="postcard-chart" class="pie-chart"></div>
+                        </div>
+                    </div>
+                    <div id="postcard-list" class="postcard-list">
+                        <!-- List items -->
+                    </div>
+                </div>
+                <div class="share-controls">
+                    <input type="text" id="share-link-input" readonly class="input-field">
+                    <button id="copy-link-btn" class="btn btn-primary">Copy Link</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal-overlay hidden">
@@ -90,9 +140,40 @@
                     <label>Duration (minutes)</label>
                     <input type="number" id="countdown-input" min="1" value="25" class="input-field">
                 </div>
+
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="show-in-title-check">
                     <label for="show-in-title-check">Show timer in browser title</label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="sound-check" checked>
+                    <label for="sound-check">Enable UI sounds</label>
+                </div>
+
+                <hr class="modal-divider">
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="notify-check">
+                    <label for="notify-check">Notify me when time reached</label>
+                </div>
+
+                <div id="notify-config" class="form-group hidden">
+                    <label>Notification Threshold</label>
+                    <div class="range-container">
+                        <input type="range" id="notify-range" min="1" max="300" step="1" value="60">
+                        <div class="range-labels">
+                            <span>1m</span>
+                            <span>15m</span>
+                            <span>1h</span>
+                            <span>2h</span>
+                            <span>5h</span>
+                        </div>
+                    </div>
+                    <div class="notify-input-row">
+                        <input type="number" id="notify-input" min="1" value="60" class="input-field input-sm">
+                        <span>minutes</span>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
