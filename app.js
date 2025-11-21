@@ -783,9 +783,26 @@ class SpeedrunnerApp {
         const shareData = params.get('share');
         if (shareData) {
             try {
-                const decoded = JSON.parse(decodeURIComponent(atob(shareData)));
-                if (Array.isArray(decoded)) {
-                    this.openShareModal(decoded, true);
+                const decodedString = decodeURIComponent(atob(shareData));
+                const items = decodedString.split(';');
+
+                const timers = items.map(item => {
+                    const [name, timeStr, tagIndexStr] = item.split('|');
+                    const tagIndex = parseInt(tagIndexStr);
+                    const tagObj = this.TAG_OPTIONS[tagIndex] || this.TAG_OPTIONS[0];
+
+                    return {
+                        name: name,
+                        type: 'stopwatch', // Treat as stopwatch for simple duration display
+                        duration: parseInt(timeStr),
+                        initialDuration: 0,
+                        remaining: 0,
+                        tag: tagObj.val
+                    };
+                });
+
+                if (timers.length > 0) {
+                    this.openShareModal(timers, true);
                 }
             } catch (e) {
                 console.error("Invalid share data", e);
@@ -793,12 +810,14 @@ class SpeedrunnerApp {
         }
     }
 
-    openShareModal(viewOnly = false) {
+    openShareModal(timers = null, viewOnly = false) {
         const modal = document.getElementById('share-modal');
         const overlay = document.getElementById('share-overlay');
 
+        const timersToUse = timers || this.timers;
+
         // Calculate stats for chart
-        const { totalMs, gradientParts } = this.calculateStats(this.timers);
+        const { totalMs, gradientParts } = this.calculateStats(timersToUse);
 
         this.postcardTotal.textContent = this.formatTime(totalMs);
         this.postcardDate.textContent = new Date().toLocaleDateString();
@@ -813,7 +832,7 @@ class SpeedrunnerApp {
         // Populate list
         const listEl = this.postcardList;
         listEl.innerHTML = '';
-        this.timers.slice(0, 5).forEach(t => { // Show top 5
+        timersToUse.slice(0, 5).forEach(t => { // Show top 5
             const item = document.createElement('div');
             item.className = 'legend-item';
             // Calculate ms for this timer to display correct time
