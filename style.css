@@ -234,7 +234,7 @@ body {
     border: 1px solid var(--color-border);
     overflow: hidden;
     box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
-    min-height: 300px;
+    /* min-height: 300px; Removed to allow button to stick to bottom */
     display: flex;
     flex-direction: column;
     transition: background 0.3s, border-color 0.3s;
@@ -870,6 +870,10 @@ body {
     align-items: center;
     justify-content: space-between;
     margin-bottom: var(--spacing-md);
+    gap: 32px;
+    /* Mandatory horizontal distance */
+    flex-wrap: wrap;
+    /* Allow wrapping on very small screens */
 }
 
 .postcard-total {
@@ -884,15 +888,49 @@ body {
 }
 
 .postcard-total .value {
-    font-family: var(--font-mono);
     font-size: 2rem;
-    font-weight: 700;
+    /* Reduced from 4rem */
+    font-weight: 800;
+    line-height: 1;
     color: var(--color-text-main);
+    display: block;
+    margin-top: var(--spacing-xs);
+}
+
+@media (max-width: 400px) {
+    .postcard-total .value {
+        font-size: 1.5rem !important;
+    }
+
+    .postcard-total {
+        margin-bottom: 32px;
+        /* Explicit large gap */
+    }
+
+    .pie-chart {
+        max-width: 160px;
+        /* Reduce chart size on mobile */
+    }
 }
 
 .postcard-chart-container {
-    width: 80px;
-    height: 80px;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.pie-chart {
+    width: 100%;
+    max-width: 220px;
+    aspect-ratio: 1 / 1;
+    /* Strict square */
+    height: auto;
+    /* Allow height to adjust based on width */
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.2);
 }
 
 .postcard-list {
@@ -904,6 +942,22 @@ body {
 .postcard-list .legend-item {
     padding: 4px 0;
     border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.legend-label-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .postcard-list .legend-item:last-child {
@@ -1023,10 +1077,7 @@ body {
         font-size: 0.8rem;
     }
 
-    .timer-table-header .col-delete::after {
-        content: '🗑️';
-        font-size: 0.8rem;
-    }
+    /* .timer-table-header .col-delete::after removed to avoid conflict with SVG button */
 
     .timer-table-header .col-control::after {
         content: '⏯';
@@ -1040,15 +1091,15 @@ body {
 
     /* Dashboard Fixes */
     .dashboard-footer {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-            "header"
-            "content"
-            "share";
+        display: flex;
+        flex-direction: column;
         gap: var(--spacing-sm);
         height: auto;
-        /* Ensure it grows */
         padding-bottom: var(--spacing-md);
+        max-width: 100vw;
+        box-sizing: border-box;
+        overflow: hidden;
+        /* Prevent overflow */
     }
 
     .dashboard-header {
@@ -1058,7 +1109,10 @@ body {
 
     .share-btn {
         width: 100%;
-        margin: 0;
+        max-width: 200px;
+        margin-top: var(--spacing-sm);
+        margin-left: auto;
+        margin-right: auto;
         justify-content: center;
         /* Ensure it doesn't overflow */
         box-sizing: border-box;

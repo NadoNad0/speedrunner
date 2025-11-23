@@ -207,6 +207,7 @@ class SpeedrunnerApp {
         this.addTimerBtn = document.getElementById('add-timer-btn');
         this.addTimerBottomBtn = document.getElementById('add-timer-bottom-btn');
         this.createFirstBtn = document.getElementById('create-first-btn');
+        this.deleteAllBtn = document.getElementById('delete-all-btn');
         this.emptyStateEl = document.getElementById('empty-state');
         this.totalTimeDisplay = document.getElementById('total-time-display');
         this.themeToggleBtn = document.getElementById('theme-toggle-btn');
@@ -319,10 +320,13 @@ class SpeedrunnerApp {
     init() {
         // Event Listeners
         this.addTimerBtn.addEventListener('click', this.addTimer);
-        this.addTimerBottomBtn.addEventListener('click', this.addTimer);
-        this.createFirstBtn.addEventListener('click', this.addTimer);
-        this.addTimerBottomBtn.addEventListener('click', this.addTimer);
-        this.createFirstBtn.addEventListener('click', this.addTimer);
+        this.addTimerBottomBtn.addEventListener('click', () => this.addTimer());
+        this.createFirstBtn.addEventListener('click', () => this.addTimer());
+
+        if (this.deleteAllBtn) {
+            this.deleteAllBtn.addEventListener('click', () => this.promptDeleteAll());
+        }
+
         this.themeToggleBtn.addEventListener('click', this.toggleTheme);
 
         // Sound Triggers
@@ -558,6 +562,26 @@ class SpeedrunnerApp {
         this.updateShareButtonState();
         this.timerToDeleteId = null;
         this.sound.playDelete(); // Play sound on confirmation
+    }
+
+    promptDeleteAll() {
+        if (this.timers.length === 0) return;
+
+        this.showConfirm(
+            "Are you sure you want to delete all timers?",
+            this.confirmDeleteAll.bind(this),
+            "Delete All Timers?"
+        );
+    }
+
+    confirmDeleteAll() {
+        this.timers = [];
+        this.saveData();
+        this.renderAllTimers();
+        this.checkEmptyState();
+        this.updateAddButtonState();
+        this.updateShareButtonState();
+        this.sound.playDelete();
     }
 
     resetTimer(id) {
@@ -837,8 +861,15 @@ class SpeedrunnerApp {
             item.className = 'legend-item';
             // Calculate ms for this timer to display correct time
             const ms = t.type === 'stopwatch' ? t.duration : (t.initialDuration - t.remaining);
+
+            // Get tag color
+            const tagObj = this.TAG_OPTIONS.find(opt => opt.val === t.tag) || this.TAG_OPTIONS[0];
+
             item.innerHTML = `
-                <span class="legend-label">${t.name}</span>
+                <div class="legend-label-container">
+                    <div class="legend-color-dot" style="background-color: ${tagObj.color}"></div>
+                    <span class="legend-label">${t.name}</span>
+                </div>
                 <span class="legend-val">${this.formatTime(ms)}</span>
             `;
             listEl.appendChild(item);
