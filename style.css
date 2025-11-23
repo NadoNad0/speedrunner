@@ -403,6 +403,10 @@ body {
     color: white;
 }
 
+.col-control button svg {
+    pointer-events: none;
+}
+
 /* Settings, Reset & Delete Buttons - Normalized */
 .col-settings button,
 .col-reset button,
@@ -1016,123 +1020,178 @@ body {
         grid-template-columns: 32px minmax(0, 1fr) 60px 28px 28px 28px 28px;
         gap: 4px;
         padding: var(--spacing-sm) 2px;
+        cursor: default;
+        /* Disable drag cursor on mobile */
     }
+}
 
-    .col-tag {
-        width: 32px;
+/* Styles for drag feedback and cursor (desktop) */
+@media (min-width: 769px) {
+
+    .timer-table-header,
+    .timer-row {
+        display: grid;
+        /* Columns: Tag | Name | Time | Control | Settings | Reset | Delete */
+        /* Adjusted: 40px Tag, 1fr Name, 120px Time, 40px Controls */
+        grid-template-columns: 40px minmax(150px, 1fr) 120px 40px 40px 40px 40px;
+        gap: var(--spacing-md);
+        align-items: center;
+        padding: var(--spacing-md);
+        border-bottom: 1px solid var(--color-border);
+        position: relative;
+        transition: background 0.2s, transform 0.2s;
+        cursor: grab;
+        /* Indicate draggable */
     }
+}
 
-    .col-tag select {
-        font-size: 1rem;
-        padding: 0;
-    }
+.progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: hsla(0, 0%, 50%, 0.05);
+    /* Subtle background for progress */
+    z-index: 0;
+    /* Behind content but above background */
+    pointer-events: none;
+    transition: width 1s linear;
+}
 
-    .col-time {
-        font-size: 0.85rem;
-        justify-content: flex-end;
-        padding-right: 2px;
-    }
+/* Ensure content is above progress bar */
+.timer-row>.col {
+    position: relative;
+    z-index: 1;
+}
 
-    .col-name input {
-        font-size: 0.9rem;
-    }
+.timer-row:active {
+    cursor: grabbing;
+}
 
-    .col-settings button,
-    .col-reset button,
-    .col-delete button {
-        font-size: 0.9rem;
-        padding: 0;
-        width: 26px;
-        height: 26px;
-    }
+.timer-row.dragging {
+    opacity: 0.5;
+    background: var(--color-surface-hover);
+    border: 2px dashed var(--color-primary);
+}
 
-    .col-control button {
-        width: 26px;
-        height: 26px;
-        font-size: 0.7rem;
-    }
+.timer-row.drag-over {
+    border-top: 2px solid var(--color-primary);
+}
 
-    .app-container {
-        padding: 8px;
-    }
+.col-tag {
+    width: 32px;
+}
 
-    /* Hide text in header for small screens */
-    .timer-table-header .col-settings,
-    .timer-table-header .col-reset,
-    .timer-table-header .col-delete,
-    .timer-table-header .col-control,
-    .timer-table-header .col-tag {
-        font-size: 0;
-        /* Hide text */
-    }
+.col-tag select {
+    font-size: 1rem;
+    padding: 0;
+}
 
-    /* Icons for headers - Simplified */
-    .timer-table-header .col-settings::after {
-        content: '⚙';
-        font-size: 0.8rem;
-    }
+.col-time {
+    font-size: 0.85rem;
+    justify-content: flex-end;
+    padding-right: 2px;
+}
 
-    .timer-table-header .col-reset::after {
-        content: '↺';
-        font-size: 0.8rem;
-    }
+.col-name input {
+    font-size: 0.9rem;
+}
 
-    /* .timer-table-header .col-delete::after removed to avoid conflict with SVG button */
+.col-settings button,
+.col-reset button,
+.col-delete button {
+    font-size: 0.9rem;
+    padding: 0;
+    width: 26px;
+    height: 26px;
+}
 
-    .timer-table-header .col-control::after {
-        content: '⏯';
-        font-size: 0.8rem;
-    }
+.col-control button {
+    width: 26px;
+    height: 26px;
+    font-size: 0.7rem;
+}
 
-    .timer-table-header .col-tag::after {
-        content: '#';
-        font-size: 0.8rem;
-    }
+.app-container {
+    padding: 8px;
+}
 
-    /* Dashboard Fixes */
-    .dashboard-footer {
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-sm);
-        height: auto;
-        padding-bottom: var(--spacing-md);
-        max-width: 100vw;
-        box-sizing: border-box;
-        overflow: hidden;
-        /* Prevent overflow */
-    }
+/* Hide text in header for small screens */
+.timer-table-header .col-settings,
+.timer-table-header .col-reset,
+.timer-table-header .col-delete,
+.timer-table-header .col-control,
+.timer-table-header .col-tag {
+    font-size: 0;
+    /* Hide text */
+}
 
-    .dashboard-header {
-        justify-content: space-between;
-        padding: var(--spacing-sm);
-    }
+/* Icons for headers - Simplified */
+.timer-table-header .col-settings::after {
+    content: '⚙';
+    font-size: 0.8rem;
+}
 
-    .share-btn {
-        width: 100%;
-        max-width: 200px;
-        margin-top: var(--spacing-sm);
-        margin-left: auto;
-        margin-right: auto;
-        justify-content: center;
-        /* Ensure it doesn't overflow */
-        box-sizing: border-box;
-    }
+.timer-table-header .col-reset::after {
+    content: '↺';
+    font-size: 0.8rem;
+}
 
-    .total-time-container {
-        align-items: flex-end;
-    }
+/* .timer-table-header .col-delete::after removed to avoid conflict with SVG button */
 
-    .total-time {
-        font-size: 1.5rem;
-    }
+.timer-table-header .col-control::after {
+    content: '⏯';
+    font-size: 0.8rem;
+}
 
-    .dashboard-content {
-        flex-direction: column;
-        padding: var(--spacing-sm);
-    }
+.timer-table-header .col-tag::after {
+    content: '#';
+    font-size: 0.8rem;
+}
 
-    .chart-legend {
-        width: 100%;
-        max-height: none;
-    }
+/* Dashboard Fixes */
+.dashboard-footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    height: auto;
+    padding-bottom: var(--spacing-md);
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* Prevent overflow */
+}
+
+.dashboard-header {
+    justify-content: space-between;
+    padding: var(--spacing-sm);
+}
+
+.share-btn {
+    width: 100%;
+    max-width: 200px;
+    margin-top: var(--spacing-sm);
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center;
+    /* Ensure it doesn't overflow */
+    box-sizing: border-box;
+}
+
+.total-time-container {
+    align-items: flex-end;
+}
+
+.total-time {
+    font-size: 1.5rem;
+}
+
+.dashboard-content {
+    flex-direction: column;
+    padding: var(--spacing-sm);
+}
+
+.chart-legend {
+    width: 100%;
+    max-height: none;
 }

@@ -497,7 +497,6 @@ class SpeedrunnerApp {
         this.saveData();
         this.sound.playFlop(); // Play "Flop" sound
 
-        this.renderTimerRow(newTimer, true);
         this.checkEmptyState();
         this.updateAddButtonState();
         this.renderAllTimers(newTimer.id);
@@ -520,7 +519,7 @@ class SpeedrunnerApp {
                 return;
             }
             this.startTimer(timer);
-            this.sound.playStart();
+            this.sound.playToggle(true);
         } else {
             timer.isRunning = false;
         }
@@ -945,12 +944,156 @@ class SpeedrunnerApp {
         }
     }
 
-    renderAllTimers(skipId = null) {
-        this.timerListEl.innerHTML = '';
-        this.timers.forEach(timer => {
-            const isNew = (timer.id === skipId);
-            this.renderTimerRow(timer, isNew);
+    setupDragAndDrop() {
+        // Desktop only check
+        if (window.innerWidth < 768) return;
+
+        const rows = this.timerListEl.querySelectorAll('.timer-row');
+        let dragSrcEl = null;
+
+        rows.forEach(row => {
+            row.addEventListener('dragstart', (e) => {
+                if (window.innerWidth < 768) {
+                    e.preventDefault();
+                    return;
+                }
+                dragSrcEl = row;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', row.innerHTML);
+                row.classList.add('dragging');
+            });
+
+            row.addEventListener('dragend', () => {
+                row.classList.remove('dragging');
+                rows.forEach(r => r.classList.remove('drag-over'));
+            });
+
+            row.addEventListener('dragover', (e) => {
+                if (e.preventDefault) e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            });
+
+            row.addEventListener('dragenter', () => {
+                row.classList.add('drag-over');
+            });
+
+            row.addEventListener('dragleave', () => {
+                row.classList.remove('drag-over');
+            });
+
+            row.addEventListener('drop', (e) => {
+                if (e.stopPropagation) e.stopPropagation();
+
+                if (dragSrcEl !== row) {
+                    const fromIndex = parseInt(dragSrcEl.getAttribute('data-index'));
+                    const toIndex = parseInt(row.getAttribute('data-index'));
+
+                    // Reorder array
+                    const item = this.timers[fromIndex];
+                    this.timers.splice(fromIndex, 1);
+                    this.timers.splice(toIndex, 0, item);
+
+                    // Save and re-render
+                    this.saveData();
+                    this.renderAllTimers();
+                }
+                return false;
+            });
         });
+    }
+
+    renderAllTimers() {
+        this.checkEmptyState();
+        this.updateAddButtonState();
+        // this.updateShareButtonState(); // This method doesn't exist in the provided code, commenting out for now.
+
+        if (this.timers.length === 0) {
+            this.timerListEl.innerHTML = '';
+            return;
+        }
+
+        this.timerListEl.innerHTML = this.timers.map((timer, index) => {
+            const isRunning = timer.isRunning;
+            const isStopwatch = timer.type === 'stopwatch';
+            const progress = isStopwatch ? 0 : ((timer.initialDuration - timer.remaining) / timer.initialDuration) * 100;
+
+            // Tag Options
+            const tagOptionsHtml = this.TAG_OPTIONS.map(opt =>
+                `<option value="${opt.val}" ${timer.tag === opt.val ? 'selected' : ''}>${opt.label}</option>`
+            ).join('');
+
+            return `
+            <div class="timer-row ${isRunning ? 'running' : ''} ${timer.remaining === 0 && !isStopwatch ? 'finished' : ''}" 
+                 data-id="${timer.id}" 
+                 data-index="${index}"
+                 draggable="true"
+                 id="timer-${timer.id}">
+                
+                <!-- Progress Bar (Background) -->
+                <div class="progress-bar" style="width: ${isStopwatch ? 0 : progress}%"></div>
+
+                <!-- Tag Select -->
+                <div class="col col-tag">
+                    <select onchange="app.updateTag(${timer.id}, this.value)">
+                        ${tagOptionsHtml}
+                    </select>
+                </div>
+
+                <!-- Name Input -->
+                <div class="col col-name">
+                    <input type="text" 
+                           value="${timer.name}" 
+                           placeholder="Timer Name"
+                           onchange="app.updateName(${timer.id}, this.value)"
+                           onkeydown="if(event.key === 'Enter') this.blur()">
+                </div>
+
+                <!-- Time Display -->
+                <div class="col col-time">
+                    <div id="time-${timer.id}" 
+                         class="time-display ${timer.remaining <= 10000 && !isStopwatch && timer.remaining > 0 ? 'warning' : ''}"
+                         onclick="app.editTime(${timer.id})">
+                        ${this.formatTime(isStopwatch ? timer.duration : timer.remaining)}
+                    </div>
+                </div>
+
+                <!-- Control Button -->
+                <div class="col col-control">
+                    <button id="btn-${timer.id}" 
+                            class="${isRunning ? 'active' : ''}" 
+                            onclick="app.toggleTimer(${timer.id})">
+                        ${isRunning ?
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' :
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>'}
+                    </button>
+                </div>
+
+                <!-- Settings Button -->
+                <div class="col col-settings">
+                    <button onclick="app.openSettings(${timer.id})">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Reset Button -->
+                <div class="col col-reset">
+                    <button onclick="app.resetTimer(${timer.id})">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Delete Button -->
+                <div class="col col-delete">
+                    <button onclick="app.promptDelete(${timer.id})">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+            </div>
+            `;
+        }).join('');
+
+        this.setupDragAndDrop();
     }
 
     renderTimerRow(timer, isNew = false) {
@@ -1003,9 +1146,19 @@ class SpeedrunnerApp {
     updateRowUI(timer) {
         const timeEl = document.getElementById(`time-${timer.id}`);
         const btnEl = document.getElementById(`btn-${timer.id}`);
-        if (timeEl) timeEl.textContent = this.formatTime(timer.type === 'stopwatch' ? timer.duration : timer.remaining);
+        if (timeEl) {
+            timeEl.textContent = this.formatTime(timer.type === 'stopwatch' ? timer.duration : timer.remaining);
+            // Update warning class
+            if (timer.remaining <= 10000 && timer.type !== 'stopwatch' && timer.remaining > 0) {
+                timeEl.classList.add('warning');
+            } else {
+                timeEl.classList.remove('warning');
+            }
+        }
         if (btnEl) {
-            btnEl.innerHTML = timer.isRunning ? '❚❚' : '▶';
+            btnEl.innerHTML = timer.isRunning ?
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>' :
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
             btnEl.className = timer.isRunning ? 'active' : '';
         }
     }
